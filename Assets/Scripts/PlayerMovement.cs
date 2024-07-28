@@ -11,6 +11,8 @@ public class PlayerMovement : MonoBehaviour
     public float stepInterval = 0.5f; // Adımlar arasındaki süre
     private float stepTimer;
 
+    private bool wasMoving = false; // Önceki hareket durumu
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -20,6 +22,9 @@ public class PlayerMovement : MonoBehaviour
         {
             Debug.LogError("AudioSource component not found on " + gameObject.name);
         }
+
+        // Karakterin pozisyonunu yükle
+        LoadPosition();
     }
 
     void Update()
@@ -27,7 +32,9 @@ public class PlayerMovement : MonoBehaviour
         moveInput.x = Input.GetAxis("Horizontal");
         moveInput.y = Input.GetAxis("Vertical");
 
-        if (moveInput != Vector2.zero) // Karakter hareket ediyorsa
+        bool isMoving = moveInput != Vector2.zero;
+
+        if (isMoving) // Karakter hareket ediyorsa
         {
             stepTimer += Time.deltaTime;
             if (stepTimer >= stepInterval)
@@ -36,10 +43,14 @@ public class PlayerMovement : MonoBehaviour
                 stepTimer = 0f;
             }
         }
-        else
+        else if (wasMoving) // Karakter durduysa ve önceki durumda hareket ediyorduysa
         {
-            stepTimer = 0f; // Karakter durduğunda timer'ı sıfırla
+            SavePosition(); // Pozisyonu kaydet
         }
+
+        wasMoving = isMoving; // Hareket durumunu güncelle
+
+        stepTimer = isMoving ? stepTimer : 0f; // Karakter durduğunda timer'ı sıfırla
     }
 
     void FixedUpdate()
@@ -59,6 +70,40 @@ public class PlayerMovement : MonoBehaviour
         {
             int index = Random.Range(0, footstepClips.Length);
             audioSource.PlayOneShot(footstepClips[index]);
+        }
+    }
+
+    // Karakter pozisyonunu kaydetme
+    public void SavePosition()
+    {
+        PlayerPrefs.SetFloat("PlayerX", transform.position.x);
+        PlayerPrefs.SetFloat("PlayerY", transform.position.y);
+        PlayerPrefs.Save();
+        Debug.Log("Position saved: " + transform.position);
+    }
+
+    // Karakter pozisyonunu yükleme
+    private void LoadPosition()
+    {
+        if (PlayerPrefs.HasKey("PlayerX") && PlayerPrefs.HasKey("PlayerY"))
+        {
+            float x = PlayerPrefs.GetFloat("PlayerX");
+            float y = PlayerPrefs.GetFloat("PlayerY");
+            transform.position = new Vector2(x, y);
+            Debug.Log("Position loaded: " + transform.position);
+        }
+    }
+
+    void OnApplicationQuit()
+    {
+        SavePosition();
+    }
+
+    void OnApplicationPause(bool pauseStatus)
+    {
+        if (pauseStatus)
+        {
+            SavePosition();
         }
     }
 }

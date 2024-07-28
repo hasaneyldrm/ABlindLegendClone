@@ -21,6 +21,7 @@ crashlytics-build.properties
 ExportedObj/
 .consulo/
 .vscode/
+.vs/
 *.csproj
 *.unityproj
 *.sln
@@ -47,7 +48,4 @@ sysinfo.txt
 *.aab
 *.unitypackage
 
-# Other
-.vscode/
-*.DS_Store
-*.swp
+#
