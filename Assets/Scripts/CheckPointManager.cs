@@ -2,7 +2,8 @@
 
 public class CheckPointManager : MonoBehaviour
 {
-    public AudioClip checkpointSound;
+    public AudioClip leftAudioClip;
+    public AudioClip rightAudioClip;
     public AudioSource audioSource;
     public Collider2D checkpointCollider;
 
@@ -19,9 +20,9 @@ public class CheckPointManager : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            if (checkpointSound != null)
+            if (rightAudioClip != null)
             {
-                audioSource.PlayOneShot(checkpointSound);
+                audioSource.PlayOneShot(rightAudioClip);
             }
             Debug.Log("Checkpoint reached!");
         }
