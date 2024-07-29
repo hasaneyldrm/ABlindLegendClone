@@ -7,6 +7,7 @@ public class CheckpointAudioPlayer : MonoBehaviour
     public float stopCheckInterval = 3f; // Karakter durduğunda checkpoint kontrol aralığı
     public float checkDistance = 10f; // Checkpoint'e olan maksimum mesafe
     public AudioSource backgroundAudioSource; // Arka plan sesleri için
+    public AudioSource footstepAudioSource; // Ayak sesleri için
     public AudioClip[] checkpointClips; // Checkpoint sesleri listesi
 
     private AudioSource audioSource;
@@ -19,7 +20,7 @@ public class CheckpointAudioPlayer : MonoBehaviour
     {
         audioSource = GetComponent<AudioSource>();
 
-        if (audioSource == null || backgroundAudioSource == null)
+        if (audioSource == null || backgroundAudioSource == null || footstepAudioSource == null)
         {
             Debug.LogError("AudioSource component not found on " + gameObject.name);
         }
@@ -55,25 +56,20 @@ public class CheckpointAudioPlayer : MonoBehaviour
     {
         while (true)
         {
-            yield return null; // Her karede kontrol et
+            yield return new WaitForSeconds(currentCheckInterval); // Belirli aralıklarla kontrol et
 
-            if (Time.time - lastCheckTime >= currentCheckInterval)
+            foreach (var checkpoint in checkpoints)
             {
-                lastCheckTime = Time.time; // Zamanlayıcıyı güncelle
+                float distance = Vector2.Distance(transform.position, checkpoint.transform.position);
 
-                foreach (var checkpoint in checkpoints)
+                if (distance <= checkDistance)
                 {
-                    float distance = Vector2.Distance(transform.position, checkpoint.transform.position);
+                    Vector2 direction = checkpoint.transform.position - transform.position;
+                    float panStereo = direction.x > 0 ? 0.6f : -0.6f; // Sağdan veya soldan gelen ses
 
-                    if (distance <= checkDistance)
-                    {
-                        Vector2 direction = checkpoint.transform.position - transform.position;
-                        float panStereo = direction.x > 0 ? 0.6f : -0.6f; // Sağdan veya soldan gelen ses
+                    PlayCheckpointSound(checkpointClips[Random.Range(0, checkpointClips.Length)], panStereo, distance);
 
-                        PlayCheckpointSound(checkpointClips[Random.Range(0, checkpointClips.Length)], panStereo, distance);
-
-                        break; // İlk uygun checkpoint'te dur
-                    }
+                    break; // İlk uygun checkpoint'te dur
                 }
             }
         }
@@ -86,9 +82,7 @@ public class CheckpointAudioPlayer : MonoBehaviour
             return;
         }
 
-        // Checkpoint sesi çalarken diğer sesleri azalt
-        backgroundAudioSource.volume = 0.2f;
-
+        // Checkpoint sesi çalarken pan değerlerini ayarla
         audioSource.panStereo = panStereo;
 
         // Sesin uzaklığa göre azaltılması (yankı etkisi)
@@ -96,14 +90,5 @@ public class CheckpointAudioPlayer : MonoBehaviour
         audioSource.volume = 0.5f + 0.5f * distanceFactor; // Minimum 0.5, maksimum 1.0
 
         audioSource.PlayOneShot(clip);
-
-        // Ses çalındıktan sonra diğer seslerin sesini eski haline getir
-        StartCoroutine(RestoreBackgroundVolume(clip.length));
-    }
-
-    private IEnumerator RestoreBackgroundVolume(float delay)
-    {
-        yield return new WaitForSeconds(delay);
-        backgroundAudioSource.volume = 1.0f;
     }
 }

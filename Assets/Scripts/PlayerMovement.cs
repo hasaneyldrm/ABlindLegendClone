@@ -50,7 +50,11 @@ public class PlayerMovement : MonoBehaviour
 
         wasMoving = isMoving; // Hareket durumunu güncelle
 
-        stepTimer = isMoving ? stepTimer : 0f; // Karakter durduğunda timer'ı sıfırla
+        // Karakter durduğunda stepTimer'ı sıfırla
+        if (!isMoving)
+        {
+            stepTimer = 0f;
+        }
     }
 
     void FixedUpdate()
