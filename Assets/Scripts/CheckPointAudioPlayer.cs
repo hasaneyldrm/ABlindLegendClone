@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class CheckpointAudioPlayer : MonoBehaviour
@@ -12,6 +13,9 @@ public class CheckpointAudioPlayer : MonoBehaviour
     private bool isMoving;
     private float currentCheckInterval;
     private float lastCheckTime; // Son kontrol zamanı
+
+    private List<AudioClip> remainingClips;
+    private List<AudioClip> playedClips;
 
     void Start()
     {
@@ -33,6 +37,10 @@ public class CheckpointAudioPlayer : MonoBehaviour
 
         // Checkpoint'leri kontrol etmeye başla
         StartCoroutine(CheckForNearbyCheckpoints());
+
+        // Ses listelerini başlat
+        remainingClips = new List<AudioClip>(checkpointClips);
+        playedClips = new List<AudioClip>();
     }
 
     void Update()
@@ -61,15 +69,28 @@ public class CheckpointAudioPlayer : MonoBehaviour
                 Vector2 direction = checkpoint.transform.position - transform.position;
                 float panStereo = direction.x / 10f; // Sağdan veya soldan gelen ses
 
-                PlayCheckpointSound(checkpointClips[Random.Range(0, checkpointClips.Length)], panStereo, direction.magnitude);
+                PlayCheckpointSound(panStereo, direction.magnitude);
 
                 break; // İlk uygun checkpoint'te dur
             }
         }
     }
 
-    private void PlayCheckpointSound(AudioClip clip, float panStereo, float distance)
+    private void PlayCheckpointSound(float panStereo, float distance)
     {
+        if (remainingClips.Count == 0)
+        {
+            // Tüm sesler oynatıldı, kalan sesleri sıfırla
+            remainingClips = new List<AudioClip>(playedClips);
+            playedClips.Clear();
+        }
+
+        // Rastgele bir ses seç ve oynat
+        int index = Random.Range(0, remainingClips.Count);
+        AudioClip clip = remainingClips[index];
+        remainingClips.RemoveAt(index);
+        playedClips.Add(clip);
+
         if (clip == null)
         {
             return;
