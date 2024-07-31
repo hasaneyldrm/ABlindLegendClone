@@ -9,13 +9,11 @@ public class CheckpointAudioPlayer : MonoBehaviour
     public AudioClip[] checkpointClips; // Checkpoint sesleri listesi
 
     private AudioSource checkpointAudioSource;
-    private CheckPointManager[] checkpoints;
     private bool isMoving;
     private float currentCheckInterval;
     private float lastCheckTime; // Son kontrol zamanı
 
-    private List<AudioClip> remainingClips;
-    private List<AudioClip> playedClips;
+    private CheckPointManager activeCheckpoint;
 
     void Start()
     {
@@ -27,9 +25,6 @@ public class CheckpointAudioPlayer : MonoBehaviour
             Debug.LogError("AudioSource component not found on " + gameObject.name);
         }
 
-        // Sahnede bulunan tüm CheckPointManager bileşenlerini bul
-        checkpoints = FindObjectsOfType<CheckPointManager>();
-
         // Başlangıçta karakterin hareket halinde olup olmadığını kontrol et
         isMoving = false;
         currentCheckInterval = stopCheckInterval;
@@ -37,10 +32,6 @@ public class CheckpointAudioPlayer : MonoBehaviour
 
         // Checkpoint'leri kontrol etmeye başla
         StartCoroutine(CheckForNearbyCheckpoints());
-
-        // Ses listelerini başlat
-        remainingClips = new List<AudioClip>(checkpointClips);
-        playedClips = new List<AudioClip>();
     }
 
     void Update()
@@ -56,6 +47,9 @@ public class CheckpointAudioPlayer : MonoBehaviour
             currentCheckInterval = isMoving ? moveCheckInterval : stopCheckInterval;
             lastCheckTime = Time.time; // Zamanlayıcıyı sıfırla
         }
+
+        // Aktif checkpoint'i kontrol et
+        activeCheckpoint = CheckPointManager.Instance;
     }
 
     private IEnumerator CheckForNearbyCheckpoints()
@@ -64,33 +58,30 @@ public class CheckpointAudioPlayer : MonoBehaviour
         {
             yield return new WaitForSeconds(currentCheckInterval); // Belirli aralıklarla kontrol et
 
-            foreach (var checkpoint in checkpoints)
+            if (activeCheckpoint != null)
             {
-                Vector2 direction = checkpoint.transform.position - transform.position;
+                Vector2 direction = activeCheckpoint.transform.position - transform.position;
                 float panStereo = direction.x / 10f; // Sağdan veya soldan gelen ses
 
-                PlayCheckpointSound(panStereo, direction.magnitude);
-
-                break; // İlk uygun checkpoint'te dur
+                PlayCheckpointSound(GetRandomCheckpointClip(), panStereo, direction.magnitude);
             }
         }
     }
 
-    private void PlayCheckpointSound(float panStereo, float distance)
+    private AudioClip GetRandomCheckpointClip()
     {
-        if (remainingClips.Count == 0)
+        if (checkpointClips.Length == 0)
         {
-            // Tüm sesler oynatıldı, kalan sesleri sıfırla
-            remainingClips = new List<AudioClip>(playedClips);
-            playedClips.Clear();
+            return null;
         }
 
         // Rastgele bir ses seç ve oynat
-        int index = Random.Range(0, remainingClips.Count);
-        AudioClip clip = remainingClips[index];
-        remainingClips.RemoveAt(index);
-        playedClips.Add(clip);
+        int index = Random.Range(0, checkpointClips.Length);
+        return checkpointClips[index];
+    }
 
+    private void PlayCheckpointSound(AudioClip clip, float panStereo, float distance)
+    {
         if (clip == null)
         {
             return;
