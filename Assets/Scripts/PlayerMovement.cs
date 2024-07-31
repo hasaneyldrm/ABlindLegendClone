@@ -13,6 +13,9 @@ public class PlayerMovement : MonoBehaviour
 
     private bool wasMoving = false; // Önceki hareket durumu
 
+    // Arka plan sesi için değişkenler
+    public AudioSource backgroundAudioSource;
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -21,6 +24,13 @@ public class PlayerMovement : MonoBehaviour
         if (audioSource == null)
         {
             Debug.LogError("AudioSource component not found on " + gameObject.name);
+        }
+
+        // Arka plan sesini çal
+        if (backgroundAudioSource != null && backgroundAudioSource.clip != null)
+        {
+            backgroundAudioSource.loop = true;
+            backgroundAudioSource.Play();
         }
 
         // Karakterin pozisyonunu yükle
